@@ -13,16 +13,26 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
+
 
 import javax.security.auth.login.LoginException;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 
 public class Login {
     static JDA Jda;
     static TrackScheduler scheduler;
+    private static int PORT = 9090;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         try {
             new ConfigurationBuilder(Config.class, new File("bot.cfg")).build(true);
         } catch (Exception exc) {
@@ -68,6 +78,41 @@ public class Login {
         scheduler = new TrackScheduler(player, playerManager);
         player.addListener(scheduler);
         player.setVolume(Config.volume);
+        final ServerSocket server = new ServerSocket(PORT);
+        System.out.println("Listening on port 8080...");
+        while (true) {
+            try (Socket client = server.accept()) {
+                InputStreamReader reader = new InputStreamReader(client.getInputStream());
+                BufferedReader br = new BufferedReader(reader);
+                String line = br.readLine();
+                String path = "";
+                while (!line.isEmpty()) {
+                    System.out.println(line);
+                    if (line.contains("POST")) {
+                        path = line;
+                    }
+                    line = br.readLine();
+                }
+                path = path.replaceAll("POST ", "");
+                path = path.replaceAll(" HTTP/1.1", "");
+                System.out.println(path);
+                if (path.contains("/play")) {
+                    // play song
+                    String song = path.replaceAll("/play/", "");
+                    System.out.println(song);
+                    scheduler.PlayTrack(song);
+
+                } else if (path.contains("/stop")) {
+                    // Stop
+                }
+                String response = "HTTP/1.1 200 OK\n" +
+                        "Access-Control-Allow-Origin: *\n" +
+                        "Connection: Closed";
+                client.getOutputStream().write(response.getBytes("UTF-8"));
+            } catch (Exception e) {
+                System.err.println(e);
+            }
+        }
     }
 
     private static boolean isNas() {

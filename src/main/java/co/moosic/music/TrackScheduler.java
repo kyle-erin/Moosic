@@ -147,6 +147,13 @@ public class TrackScheduler extends AudioEventAdapter {
         loadTrack(randomSong);
     }
 
+    public void PlayTrack(String songUrl) {
+        if (isPlaylist(songUrl)) {
+            parsePlaylist(songUrl);
+        }
+        loadTrack(songUrl);
+    }
+
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         if (endReason.mayStartNext) {
